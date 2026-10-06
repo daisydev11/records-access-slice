@@ -1,3 +1,4 @@
+import { cache } from "react";
 import { cookies } from "next/headers";
 import { config } from "@/lib/config";
 import { Prisma } from "@prisma/client";
@@ -32,8 +33,11 @@ export async function createSession(userId: string): Promise<void> {
  * Returns the signed-in user, or null. Expiry is checked by the database query itself.
  * One statement: the session and its user are read with a JOIN. (Prisma's
  * nested select sent two statements, one per table.)
+ * Wrapped in React's cache(): the layout and the page both need the user,
+ * and within one request the second call reuses the first one's answer.
+ * The cache lasts for that single request only.
  */
-export async function getSessionUser(): Promise<SessionUser | null> {
+export const getSessionUser = cache(async function getSessionUser(): Promise<SessionUser | null> {
   const token = (await cookies()).get(config.session.cookieName)?.value;
   if (!token) return null;
   const rows = await db.$queryRaw<SessionUser[]>`
@@ -42,7 +46,7 @@ export async function getSessionUser(): Promise<SessionUser | null> {
     WHERE s."tokenHash" = ${sha256(token)} AND s."expiresAt" > ${new Date()}
     LIMIT 1`;
   return rows[0] ?? null;
-}
+});
 
 /** Deletes the session row, then the cookie. After this the token is worthless even if copied. */
 export async function destroySession(): Promise<void> {
