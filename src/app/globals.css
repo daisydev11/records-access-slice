@@ -1,0 +1,148 @@
+:root {
+  --bg: #f6f5f1;
+  --surface: #ffffff;
+  --text: #1b1b18;
+  --muted: #62625b;
+  --border: #d6d4cc;
+  --accent: #1f4fd8;
+  --accent-text: #ffffff;
+  --danger: #b3261e;
+  --danger-bg: #fdecea;
+  --focus: #1f4fd8;
+  --radius: 10px;
+  --font: ui-sans-serif, system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
+}
+
+@media (prefers-color-scheme: dark) {
+  :root {
+    --bg: #131312;
+    --surface: #1d1d1b;
+    --text: #f1f0ea;
+    --muted: #a5a49b;
+    --border: #3a3a36;
+    --accent: #8fb0ff;
+    --accent-text: #0d1a3d;
+    --danger: #ff8a80;
+    --danger-bg: #3a1614;
+    --focus: #8fb0ff;
+  }
+}
+
+* { box-sizing: border-box; }
+
+body {
+  margin: 0;
+  min-height: 100vh;
+  background: var(--bg);
+  color: var(--text);
+  font-family: var(--font);
+  font-size: 16px;
+  line-height: 1.5;
+}
+
+.card {
+  width: 100%;
+  max-width: 400px;
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: calc(var(--radius) + 4px);
+  padding: 32px 28px;
+}
+
+h1 { font-size: 1.5rem; line-height: 1.2; margin: 0 0 6px; letter-spacing: -0.01em; }
+.lede { margin: 0 0 24px; color: var(--muted); }
+
+form { display: grid; gap: 18px; }
+
+.field { display: grid; gap: 6px; }
+.field label { font-weight: 600; font-size: 0.9rem; }
+.field input {
+  width: 100%;
+  padding: 11px 12px;
+  font: inherit;
+  color: var(--text);
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+}
+.field input[aria-invalid="true"] { border-color: var(--danger); }
+.field input.code { font-size: 1.4rem; letter-spacing: 0.4em; text-align: center; font-variant-numeric: tabular-nums; }
+.hint { margin: 0; font-size: 0.85rem; color: var(--muted); }
+.field-error { margin: 0; font-size: 0.85rem; color: var(--danger); }
+
+/* Visible focus on everything interactive, for keyboard users. */
+input:focus-visible, button:focus-visible, a:focus-visible {
+  outline: 3px solid var(--focus);
+  outline-offset: 2px;
+}
+
+button {
+  font: inherit;
+  font-weight: 600;
+  padding: 12px 16px;
+  border-radius: var(--radius);
+  border: 1px solid transparent;
+  background: var(--accent);
+  color: var(--accent-text);
+  cursor: pointer;
+}
+button:disabled { opacity: 0.55; cursor: not-allowed; }
+button.secondary { background: transparent; color: var(--text); border-color: var(--border); }
+
+.alert {
+  margin: 0;
+  padding: 10px 12px;
+  border-radius: var(--radius);
+  background: var(--danger-bg);
+  color: var(--danger);
+  font-size: 0.9rem;
+}
+.notice { margin: 0; color: var(--muted); font-size: 0.9rem; }
+
+.links { margin: 20px 0 0; font-size: 0.9rem; color: var(--muted); display: grid; gap: 6px; }
+a { color: var(--accent); text-underline-offset: 3px; }
+.stack { display: grid; gap: 14px; }
+
+.centered { min-height: 100vh; display: grid; place-items: center; padding: 24px 16px; }
+
+/* Signed-in shell */
+.shell { max-width: 880px; margin: 0 auto; padding: 0 16px 48px; }
+.shell-header { display: flex; flex-wrap: wrap; gap: 12px; align-items: center; justify-content: space-between; padding: 16px 0; border-bottom: 1px solid var(--border); }
+.shell-header nav { display: flex; gap: 20px; font-weight: 600; }
+.shell-user { display: flex; gap: 12px; align-items: center; color: var(--muted); font-size: 0.9rem; }
+.shell-user button { padding: 7px 12px; background: transparent; color: var(--text); border-color: var(--border); }
+.shell-main { padding-top: 32px; }
+.dev-banner { margin: 12px 0 0; padding: 8px 12px; border: 1px dashed var(--border); border-radius: var(--radius); font-size: 0.85rem; color: var(--muted); }
+
+h2 { font-size: 1.05rem; margin: 0; }
+.button { display: inline-block; text-align: center; font-weight: 600; padding: 12px 16px; border-radius: var(--radius); background: var(--accent); color: var(--accent-text); text-decoration: none; }
+button.danger { background: var(--danger); color: var(--surface); }
+.row { display: flex; flex-wrap: wrap; gap: 10px; }
+.panel { background: var(--surface); border: 1px solid var(--border); border-radius: calc(var(--radius) + 4px); padding: 20px; }
+.panel p { margin: 0; }
+.stack > * { margin-top: 0; margin-bottom: 0; }
+.stack { justify-items: start; }
+.stack > .panel, .stack > table, .stack > dl, .stack > form { justify-self: stretch; }
+
+.plans { list-style: none; margin: 0; padding: 0; display: grid; gap: 16px; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); }
+.plan { display: grid; gap: 12px; align-content: start; background: var(--surface); border: 1px solid var(--border); border-radius: calc(var(--radius) + 4px); padding: 22px; }
+.plan[aria-current="true"] { border-color: var(--accent); box-shadow: inset 0 0 0 1px var(--accent); }
+.plan .stack { justify-items: stretch; }
+.price { margin: 0; font-size: 1.35rem; font-weight: 700; font-variant-numeric: tabular-nums; }
+.price span { font-size: 0.85rem; font-weight: 400; color: var(--muted); }
+.badge { margin: 0; justify-self: start; padding: 3px 10px; border-radius: 999px; border: 1px solid var(--accent); color: var(--accent); font-size: 0.8rem; font-weight: 600; }
+
+.summary { width: 100%; max-width: 560px; border-collapse: collapse; }
+.summary th, .summary td { padding: 12px 0; border-bottom: 1px solid var(--border); text-align: left; font-weight: 400; vertical-align: top; }
+.summary td { text-align: right; font-variant-numeric: tabular-nums; white-space: nowrap; padding-left: 16px; }
+.summary .hint { display: block; margin-top: 2px; }
+.summary .total th, .summary .total td { font-weight: 700; border-bottom: 0; font-size: 1.1rem; }
+
+.facts { margin: 0; max-width: 560px; display: grid; }
+.facts > div { display: grid; grid-template-columns: 130px 1fr; gap: 12px; padding: 12px 0; border-bottom: 1px solid var(--border); }
+.facts dt { color: var(--muted); }
+.facts dd { margin: 0; font-weight: 600; }
+
+.field textarea { width: 100%; padding: 11px 12px; font: inherit; color: var(--text); background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius); resize: vertical; }
+textarea:focus-visible { outline: 3px solid var(--focus); outline-offset: 2px; }
+.panel form, form.panel { gap: 14px; }
