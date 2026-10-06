@@ -1,9 +1,13 @@
 import { cookies } from "next/headers";
 import { config } from "@/lib/config";
-import { db } from "@/lib/db";
+import { Prisma } from "@prisma/client";
+import { db, dbSchema } from "@/lib/db";
 import { generateToken, sha256 } from "@/lib/auth/tokens";
 
 export type SessionUser = { id: string; name: string; email: string };
+
+const sessionTable = Prisma.raw(`"${dbSchema}"."Session"`);
+const userTable = Prisma.raw(`"${dbSchema}"."User"`);
 
 /**
  * Creates the session row and sets the cookie.
@@ -24,15 +28,20 @@ export async function createSession(userId: string): Promise<void> {
   });
 }
 
-/** Returns the signed-in user, or null. Expiry is checked by the database query itself. */
+/**
+ * Returns the signed-in user, or null. Expiry is checked by the database query itself.
+ * One statement: the session and its user are read with a JOIN. (Prisma's
+ * nested select sent two statements, one per table.)
+ */
 export async function getSessionUser(): Promise<SessionUser | null> {
   const token = (await cookies()).get(config.session.cookieName)?.value;
   if (!token) return null;
-  const session = await db.session.findFirst({
-    where: { tokenHash: sha256(token), expiresAt: { gt: new Date() } },
-    select: { user: { select: { id: true, name: true, email: true } } },
-  });
-  return session?.user ?? null;
+  const rows = await db.$queryRaw<SessionUser[]>`
+    SELECT u."id", u."name", u."email"
+    FROM ${sessionTable} s JOIN ${userTable} u ON u."id" = s."userId"
+    WHERE s."tokenHash" = ${sha256(token)} AND s."expiresAt" > ${new Date()}
+    LIMIT 1`;
+  return rows[0] ?? null;
 }
 
 /** Deletes the session row, then the cookie. After this the token is worthless even if copied. */
