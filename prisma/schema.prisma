@@ -22,6 +22,8 @@ model User {
   sessions           Session[]
   verificationCodes  VerificationCode[]
   passwordResetTokens PasswordResetToken[]
+  notes               Note[]
+  auditLogs           AuditLog[]
 }
 
 model Session {
@@ -70,4 +72,40 @@ model RateLimit {
   key         String   @id
   count       Int
   windowStart DateTime
+}
+
+// A record owned by exactly one user.
+model Note {
+  // Internal primary key. Used for storage and joins only; never sent to a client.
+  id        Int      @id @default(autoincrement())
+  // The identifier clients see: random, unique, safe to put in a URL.
+  // It identifies a note. It does not authorise access to it.
+  publicId  String   @unique
+  userId    String
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  title     String
+  body      String
+  createdAt DateTime @default(now())
+
+  // Serves the list: WHERE userId = ? ORDER BY createdAt DESC.
+  @@index([userId, createdAt])
+}
+
+enum AuditAction {
+  NOTE_DELETED
+}
+
+// What was done, by whom, to what, and when. Rows copy the record's identity,
+// so they still say what was deleted after the record itself is gone.
+model AuditLog {
+  id               Int         @id @default(autoincrement())
+  actorUserId      String
+  actor            User        @relation(fields: [actorUserId], references: [id], onDelete: Restrict)
+  action           AuditAction
+  recordPublicId   String
+  recordInternalId Int
+  recordTitle      String
+  createdAt        DateTime    @default(now())
+
+  @@index([actorUserId, createdAt])
 }
