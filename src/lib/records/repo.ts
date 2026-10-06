@@ -1,4 +1,5 @@
-import { db } from "@/lib/db";
+import { Prisma } from "@prisma/client";
+import { db, dbSchema } from "@/lib/db";
 import { newPublicId, PUBLIC_ID_PATTERN } from "@/lib/records/public-id";
 import type { CreateNoteInput } from "@/lib/validation/records";
 
@@ -8,6 +9,10 @@ import type { CreateNoteInput } from "@/lib/validation/records";
 // below carries that userId in its WHERE clause. A route handler cannot
 // "forget the ownership check", because there is no separate check to forget:
 // the only query it can run is already scoped.
+
+const noteTable = Prisma.raw(`"${dbSchema}"."Note"`);
+const auditTable = Prisma.raw(`"${dbSchema}"."AuditLog"`);
+const auditAction = Prisma.raw(`"${dbSchema}"."AuditAction"`);
 
 // What a client may see. The internal primary key (id) is not in this list.
 const PUBLIC_FIELDS = { publicId: true, title: true, body: true, createdAt: true } as const;
@@ -35,21 +40,23 @@ export function notesFor(userId: string) {
     },
 
     /**
-     * Deletes one of this user's notes and records the deletion.
-     * Returns false if there was no such note for this user.
+     * Deletes one of this user's notes and records the deletion, in ONE
+     * statement. The DELETE only matches a row with this publicId AND this
+     * userId; the audit row is built from whatever that DELETE returned.
+     *   - not this user's note, or no such note: nothing deleted, nothing logged
+     *   - the audit insert fails: the statement fails, so the delete is undone
+     * There is no moment at which the note is gone and the log does not say so.
      */
     async delete(publicId: string): Promise<boolean> {
       if (!PUBLIC_ID_PATTERN.test(publicId)) return false;
-      const note = await db.note.findFirst({ where: { publicId, userId }, select: { id: true, publicId: true, title: true } });
-      if (!note) return false;
-      // Audit row and delete commit together or not at all.
-      await db.$transaction([
-        db.auditLog.create({
-          data: { actorUserId: userId, action: "NOTE_DELETED", recordPublicId: note.publicId, recordInternalId: note.id, recordTitle: note.title },
-        }),
-        db.note.deleteMany({ where: { id: note.id, userId } }),
-      ]);
-      return true;
+      const logged = await db.$executeRaw`
+        WITH deleted AS (
+          DELETE FROM ${noteTable} WHERE "publicId" = ${publicId} AND "userId" = ${userId}
+          RETURNING "id", "publicId", "title"
+        )
+        INSERT INTO ${auditTable} ("actorUserId", "action", "recordPublicId", "recordInternalId", "recordTitle", "createdAt")
+        SELECT ${userId}, 'NOTE_DELETED'::${auditAction}, "publicId", "id", "title", ${new Date()} FROM deleted`;
+      return logged === 1;
     },
   };
 }

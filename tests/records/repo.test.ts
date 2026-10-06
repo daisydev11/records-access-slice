@@ -93,4 +93,18 @@ describe("audit", () => {
     expect(await notesFor(userA).delete(note.publicId)).toBe(false);
     expect(await db.auditLog.count({ where: { recordPublicId: note.publicId } })).toBe(1);
   });
+
+  it("if the audit row cannot be written, the note is not deleted", async () => {
+    const note = await notesFor(userA).create({ title: "FORCE-AUDIT-FAILURE", body: "must survive" });
+    const audit = Prisma.raw(`"${dbSchema}"."AuditLog"`);
+    // Make the audit insert fail for this one title, the way a full disk or a bug would.
+    await db.$executeRaw`ALTER TABLE ${audit} ADD CONSTRAINT "test_forced_failure" CHECK ("recordTitle" <> 'FORCE-AUDIT-FAILURE') NOT VALID`;
+    try {
+      await expect(notesFor(userA).delete(note.publicId)).rejects.toThrow();
+    } finally {
+      await db.$executeRaw`ALTER TABLE ${audit} DROP CONSTRAINT "test_forced_failure"`;
+    }
+    expect(await notesFor(userA).get(note.publicId)).toMatchObject({ body: "must survive" });
+    expect(await db.auditLog.count({ where: { recordPublicId: note.publicId } })).toBe(0);
+  });
 });
