@@ -10,6 +10,8 @@
     "test": "vitest run",
     "db:migrate": "prisma migrate deploy",
     "db:studio": "prisma studio",
+    "measure": "node scripts/measure-queries.mjs",
+    "audit": "node scripts/access-control-audit.mjs",
     "postinstall": "prisma generate"
   },
   "dependencies": {
