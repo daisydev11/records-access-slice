@@ -23,7 +23,6 @@ export default async function RecordsPage({ searchParams }: Props) {
   if (!user) redirect("/signin");
   const { view, record } = await searchParams;
   const notes = notesFor(user.id);
-  const list = await notes.list();
 
   if (view === "create") {
     return (
@@ -57,6 +56,9 @@ export default async function RecordsPage({ searchParams }: Props) {
     );
   }
 
+  // Only the list view reads the list. The create and detail views above
+  // return before this line, so they never pay for it.
+  const list = await notes.list();
   return (
     <div className="stack">
       <div className="title-row">

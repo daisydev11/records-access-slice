@@ -56,8 +56,11 @@ describe("public identifiers", () => {
   it("returns a 16-character publicId and never the internal id or the owner", async () => {
     const created = await notesFor(userA).create({ title: "Identifiers", body: "" });
     expect(created.publicId).toMatch(/^[A-Za-z0-9_-]{16}$/);
-    for (const note of [created, await notesFor(userA).get(created.publicId), ...(await notesFor(userA).list())]) {
+    for (const note of [created, await notesFor(userA).get(created.publicId)]) {
       expect(Object.keys(note!).sort()).toEqual(["body", "createdAt", "publicId", "title"]);
+    }
+    for (const note of await notesFor(userA).list()) {
+      expect(Object.keys(note).sort()).toEqual(["createdAt", "publicId", "title"]);
     }
   });
 

@@ -12,13 +12,16 @@ import type { CreateNoteInput } from "@/lib/validation/records";
 // What a client may see. The internal primary key (id) is not in this list.
 const PUBLIC_FIELDS = { publicId: true, title: true, body: true, createdAt: true } as const;
 
+const SUMMARY_FIELDS = { publicId: true, title: true, createdAt: true } as const;
+
 export type PublicNote = { publicId: string; title: string; body: string; createdAt: Date };
+export type NoteSummary = Omit<PublicNote, "body">;
 
 export function notesFor(userId: string) {
   return {
-    /** The user's notes, newest first. */
-    list(): Promise<PublicNote[]> {
-      return db.note.findMany({ where: { userId }, orderBy: { createdAt: "desc" }, select: PUBLIC_FIELDS });
+    /** The user's notes, newest first. Titles only: the list never shows the body. */
+    list(): Promise<NoteSummary[]> {
+      return db.note.findMany({ where: { userId }, orderBy: { createdAt: "desc" }, select: SUMMARY_FIELDS });
     },
 
     /** One note, only if it is this user's. Null for anything else. */
